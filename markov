@@ -6,7 +6,7 @@ use Data::Dumper;
 
 my %chain;
 undef $/;
-my $input = <>;
+my $input = <STDIN>;
 $input = lc $input;
 
 #$input =~ s/[.,;:]//msg;
@@ -19,7 +19,6 @@ for(my $i = 0 ; $i < @words ; $i++)
 }
 
 my @k = keys %chain;
-my $w = $k[rand @k];
 
 #print Dumper(\%chain);
 
@@ -31,12 +30,25 @@ sub choose
 		or return;
 	return $next->[rand @$next];
 }
-	
-while(1)
+
+sub chain
 {
-	print $w, "\n";
+	my $w = shift;
+	my @r = ();
 
-	last if $w =~ m/[^.][.?]$/;
+	while(1)
+	{
+		push @r, $w;
+		last if $w =~ m/[^.][.?]$/;
+		$w = choose($w) or last;
+	}
 
-	$w = choose($w) or last;
+	return join ' ', @r;
+}
+
+if (@ARGV)
+{
+	print chain($_), "\n" for @ARGV;
+} else {
+	print chain($k[rand @k]), "\n";
 }
