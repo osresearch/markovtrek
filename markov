@@ -4,44 +4,69 @@ use warnings;
 use strict;
 use Data::Dumper;
 
-my %chain;
+my %chain1;
+my %chain2;
 undef $/;
 my $input = <STDIN>;
 $input = lc $input;
 
 #$input =~ s/[.,;:]//msg;
+# Special case Lt., Dr., etc
+$input =~ s/lt\./lt. /msg;
+$input =~ s/dr\./dr. /msg;
+$input =~ s/capt\./capt. /msg;
 
 my @words = split /\s+/, $input;
 
-for(my $i = 0 ; $i < @words ; $i++)
+for(my $i = 0 ; $i < @words - 1 ; $i++)
 {
-	push @{ $chain{$words[$i]} ||= [] }, $words[$i+1];
+	my $w0 = $words[$i+0];
+	my $w1 = $words[$i+1];
+	my $w2 = $words[$i+2];
+	push @{ $chain1{$w0} ||= [] }, $w1;
+	push @{ $chain2{$w0 . " " . $w1} ||= [] }, $w2;
 }
 
-my @k = keys %chain;
+my @k = keys %chain2;
 
 #print Dumper(\%chain);
 
 
 sub choose
 {
-	my $w = shift;
-	my $next = $chain{$w}
-		or return;
-	return $next->[rand @$next];
+	my $w0 = shift;
+	my $w1 = shift;
+	my $next = $chain2{"$w0 $w1"};
+
+	# If there is anything in the two-word chain, use it
+	return $next->[rand @$next] if $next;
+
+	# try the one word chain
+	$next = $chain1{$w1};
+	return $next->[rand @$next] if $next;
+
+	# nothing, end the output
+	return;
+	
 }
 
 sub chain
 {
-	my $w = shift;
+	my $w0 = '';
+	my $w1 = shift;
 	my @r = ();
 
 	while(1)
 	{
-		push @r, $w;
-		last if $w =~ m/[^.][.?]$/;
-		$w = choose($w) or last;
+		last if $w1 =~ m/[^.][.?]$/;
+		my $w2 = choose($w0, $w1) or last;
+		push @r, $w0;
+
+		$w0 = $w1;
+		$w1 = $w2;
 	}
+
+	push @r, $w1;
 
 	return join ' ', @r;
 }
